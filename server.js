@@ -36,7 +36,7 @@ const USGS_URLS = {
 let lastEventId = null;
 
 // -------------------------------
-// Poll USGS every 30 seconds and send Firebase notifications
+// Poll USGS every 30 seconds + send Firebase notifications
 // -------------------------------
 async function pollUSGS() {
   try {
@@ -83,12 +83,22 @@ app.get("/api/quakes", async (req, res) => {
     const data = (await axios.get(USGS_URLS[range])).data;
 
     const output = { quakes: [] };
+
     data.features.forEach(f => {
+      // Extract coordinates (lon, lat, depth)
+      const coords = f.geometry.coordinates;
+      const lon = coords[0];
+      const lat = coords[1];
+
       output.quakes.push({
         id: f.id,
         place: f.properties.place,
         mag: f.properties.mag,
-        time: f.properties.time
+        time: f.properties.time,
+
+        // Send lat & lon to app (important for map markers)
+        lat: lat,
+        lon: lon
       });
     });
 
@@ -100,7 +110,7 @@ app.get("/api/quakes", async (req, res) => {
 });
 
 // -------------------------------
-// Start server (dynamic PORT support for Render/Fly.io)
+// Start server
 // -------------------------------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
